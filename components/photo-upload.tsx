@@ -1,36 +1,52 @@
-"use client"
+"use client";
 
-import { useCallback } from "react"
-import { useDropzone, FileRejection } from "react-dropzone"
-import { Upload, ImageIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
+import { useCallback } from "react";
+import { useDropzone, FileRejection } from "react-dropzone";
+import { Upload, ImageIcon } from "lucide-react";
+import { cn, resizeImage } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface PhotoUploadProps {
-  onPhotoUpload: (file: File) => void
+  onPhotoUpload: (file: File) => void;
 }
 
 export function PhotoUpload({ onPhotoUpload }: PhotoUploadProps) {
-  const { toast } = useToast()
+  const { toast } = useToast();
 
   const onDrop = useCallback(
-    (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      if (acceptedFiles.length > 0) {
-        onPhotoUpload(acceptedFiles[0])
-      }
-
+    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
       if (fileRejections.length > 0) {
-        const rejection = fileRejections[0]
-        const errorMessage = rejection.errors[0].message
+        const rejection = fileRejections[0];
+        // Use a more specific message if possible
+        const message =
+          rejection.errors[0].code === "file-too-large"
+            ? `Ukuran file maksimal 10MB.`
+            : rejection.errors[0].message;
         toast({
           variant: "destructive",
           title: "Gagal Upload Foto",
-          description: `Ukuran file terlalu besar. Maksimal 10MB.`,
-        })
+          description: message,
+        });
+        return;
+      }
+
+      if (acceptedFiles.length > 0) {
+        try {
+          const originalFile = acceptedFiles[0];
+          const resizedFile = await resizeImage(originalFile);
+          onPhotoUpload(resizedFile);
+        } catch (error) {
+          console.error("Image resizing failed:", error);
+          toast({
+            variant: "destructive",
+            title: "Gagal Memproses Gambar",
+            description: "Terjadi kesalahan saat mengubah ukuran gambar.",
+          });
+        }
       }
     },
-    [onPhotoUpload, toast],
-  )
+    [onPhotoUpload, toast]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -39,14 +55,14 @@ export function PhotoUpload({ onPhotoUpload }: PhotoUploadProps) {
     },
     multiple: false,
     maxSize: 10 * 1024 * 1024, // 10MB
-  })
+  });
 
   return (
     <div
       {...getRootProps()}
       className={cn(
         "border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer transition-colors hover:border-primary/50",
-        isDragActive && "border-primary bg-primary/5",
+        isDragActive && "border-primary bg-primary/5"
       )}
     >
       <input {...getInputProps()} />
@@ -60,12 +76,16 @@ export function PhotoUpload({ onPhotoUpload }: PhotoUploadProps) {
           <>
             <ImageIcon className="h-12 w-12 text-muted-foreground" />
             <div>
-              <p className="font-medium text-foreground mb-1">Klik atau drag foto ke sini</p>
-              <p className="text-sm text-muted-foreground">Mendukung JPG, PNG, GIF, WebP (Max 10MB)</p>
+              <p className="font-medium text-foreground mb-1">
+                Klik atau drag foto ke sini
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Mendukung JPG, PNG, GIF, WebP (Max 10MB)
+              </p>
             </div>
           </>
         )}
       </div>
     </div>
-  )
+  );
 }

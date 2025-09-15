@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
-
-import { useEffect, useRef } from "react";
-import type { PhotoState } from "@/components/twibbon-editor";
-
-import { Skeleton } from "@/components/ui/skeleton";
+import React, { useEffect, useRef, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { PhotoState } from "./twibbon-editor";
+import { Skeleton } from "./ui/skeleton";
+import { getCssFilter } from "@/lib/utils";
 
 interface FrameState {
   id: string;
@@ -20,6 +19,7 @@ interface PhotoEditorProps {
   onPhotoUpdate: (updates: Partial<PhotoState>) => void;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   isPhotoUploaded: boolean;
+  filter: string;
 }
 
 export function PhotoEditor({
@@ -28,93 +28,135 @@ export function PhotoEditor({
   onPhotoUpdate,
   canvasRef,
   isPhotoUploaded,
+  filter,
 }: PhotoEditorProps) {
+  const { toast } = useToast();
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDragging = useRef(false);
   const lastPosition = useRef({ x: 0, y: 0 });
-  const frameImageRef = useRef<HTMLImageElement | null>(null);
-  const [isFrameLoading, setIsFrameLoading] = React.useState(true);
 
-  // Effect to load the frame image only once
+  const frameImageRef = useRef<HTMLImageElement | null>(null);
+  const photoImageRef = useRef<HTMLImageElement | null>(null);
+
+  const [isFrameLoading, setIsFrameLoading] = useState(true);
+  const [isPhotoLoading, setIsPhotoLoading] = useState(true);
+  const [isDraggingState, setIsDraggingState] = useState(false);
+
+  // Effect to load the frame image
   useEffect(() => {
     if (!selectedFrame) {
       frameImageRef.current = null;
       setIsFrameLoading(false);
       return;
     }
-
-    if (frameImageRef.current && frameImageRef.current.src === new URL(selectedFrame.url, window.location.origin).href) {
-      // Frame already loaded and is the same
+    // Avoid reloading if the image is already loaded
+    if (
+      frameImageRef.current &&
+      frameImageRef.current.src ===
+        new URL(selectedFrame.url, window.location.origin).href
+    ) {
       setIsFrameLoading(false);
       return;
     }
-
     setIsFrameLoading(true);
     const frameImg = new Image();
     frameImg.crossOrigin = "anonymous";
     frameImg.onload = () => {
       frameImageRef.current = frameImg;
       setIsFrameLoading(false);
-      // Trigger a re-render of the canvas to draw the newly loaded frame
-      // by updating a dummy state or by directly calling the draw function if it were extracted.
-      // For now, relying on the main draw effect to pick this up.
     };
     frameImg.onerror = () => {
       console.error("Failed to load frame image:", selectedFrame.url);
       setIsFrameLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Gagal Memuat Bingkai",
+        description: "Tidak dapat memuat file gambar untuk bingkai twibbon.",
+      });
     };
     frameImg.src = selectedFrame.url;
-  }, [selectedFrame]);
+  }, [selectedFrame, toast]);
+
+  // Effect to load the user's photo
+  useEffect(() => {
+    if (!photo.url) {
+      photoImageRef.current = null;
+      setIsPhotoLoading(false);
+      return;
+    }
+    // Avoid reloading if the image is already loaded
+    if (
+      photoImageRef.current &&
+      photoImageRef.current.src ===
+        new URL(photo.url, window.location.origin).href
+    ) {
+      setIsPhotoLoading(false);
+      return;
+    }
+    setIsPhotoLoading(true);
+    const photoImg = new Image();
+    photoImg.crossOrigin = "anonymous";
+    photoImg.onload = () => {
+      photoImageRef.current = photoImg;
+      setIsPhotoLoading(false);
+    };
+    photoImg.onerror = () => {
+      console.error("Failed to load photo image:", photo.url);
+      setIsPhotoLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Gagal Memuat Foto",
+        description: "Tidak dapat memuat file gambar yang Anda unggah.",
+      });
+    };
+    photoImg.src = photo.url;
+  }, [photo.url, toast]);
 
   // Main effect for drawing photo and frame
   useEffect(() => {
-    if (!previewCanvasRef.current) return;
-
     const canvas = previewCanvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = 2160;
-    canvas.height = 2700;
+    canvas.width = 1080;
+    canvas.height = 1350;
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const drawFrame = () => {
-      if (frameImageRef.current) {
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(frameImageRef.current, 0, 0, canvas.width, canvas.height);
-      }
-    };
-
-    if (photo.url) {
-      const photoImg = new Image();
-      photoImg.crossOrigin = "anonymous";
-
-      photoImg.onload = () => {
+    const drawPhoto = () => {
+      if (photoImageRef.current) {
         ctx.save();
-
+        // Apply transformations
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate((photo.rotation * Math.PI) / 180);
         ctx.scale(photo.scale, photo.scale);
         ctx.translate(-canvas.width / 2, -canvas.height / 2);
 
+        const photoImg = photoImageRef.current;
         const photoAspect = photoImg.width / photoImg.height;
         let drawWidth = canvas.width;
         let drawHeight = canvas.height;
 
         if (photoAspect > 1) {
+          // Landscape
           drawHeight = drawWidth / photoAspect;
         } else {
+          // Portrait or square
           drawWidth = drawHeight * photoAspect;
         }
 
         const offsetX = (canvas.width - drawWidth) / 2;
         const offsetY = (canvas.height - drawHeight) / 2;
+
+        if (isDraggingState) {
+          ctx.globalAlpha = 0.7; // Set opacity when dragging
+        }
+
+        ctx.filter = getCssFilter(filter);
 
         ctx.drawImage(
           photoImg,
@@ -123,21 +165,38 @@ export function PhotoEditor({
           drawWidth,
           drawHeight
         );
-
         ctx.restore();
-        drawFrame(); // Draw frame after photo
-      };
+      }
+    };
 
-      photoImg.src = photo.url;
+    const drawFrame = () => {
+      if (frameImageRef.current) {
+        ctx.drawImage(frameImageRef.current, 0, 0, canvas.width, canvas.height);
+      }
+    };
+
+    if (isDraggingState) {
+      // When dragging, draw frame first, then photo on top with opacity
+      drawFrame();
+      drawPhoto();
     } else {
-      drawFrame(); // If no photo, just draw the frame
+      // Default: draw photo first, then frame on top
+      drawPhoto();
+      drawFrame();
     }
-  }, [photo, selectedFrame, isFrameLoading]);
+  }, [
+    photo,
+    selectedFrame,
+    isFrameLoading,
+    isPhotoLoading,
+    isDraggingState,
+    filter,
+  ]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!isPhotoUploaded) return;
-    if (!photo.url) return;
+    if (!isPhotoUploaded || !photo.url) return;
     isDragging.current = true;
+    setIsDraggingState(true);
     const rect = previewCanvasRef.current?.getBoundingClientRect();
     if (rect) {
       lastPosition.current = {
@@ -170,15 +229,17 @@ export function PhotoEditor({
 
   const handleMouseUp = () => {
     isDragging.current = false;
+    setIsDraggingState(false);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isPhotoUploaded) return;
+    if (!isPhotoUploaded || !photo.url) return;
     e.preventDefault();
     const touch = e.touches[0];
     const rect = previewCanvasRef.current?.getBoundingClientRect();
     if (rect) {
       isDragging.current = true;
+      setIsDraggingState(true);
       lastPosition.current = {
         x: touch.clientX - rect.left,
         y: touch.clientY - rect.top,
@@ -212,6 +273,7 @@ export function PhotoEditor({
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
     isDragging.current = false;
+    setIsDraggingState(false);
   };
 
   if (!photo.url && selectedFrame) {
@@ -258,13 +320,6 @@ export function PhotoEditor({
           onTouchEnd={handleTouchEnd}
         />
       </div>
-
-      {photo.url && (
-        <p className="text-sm text-muted-foreground text-center">
-          Drag foto untuk mengatur posisi, gunakan kontrol di samping untuk zoom
-          dan rotasi
-        </p>
-      )}
     </div>
   );
 }

@@ -3,17 +3,26 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { PhotoUpload } from "@/components/photo-upload";
 import { PhotoEditor } from "@/components/photo-editor";
-import {
-  Download,
-  RotateCw,
-  Move,
-  ZoomIn,
-  ZoomOut,
-  Upload,
-} from "lucide-react";
+import { Upload, RefreshCcw } from "lucide-react";
+import { FilterCarousel } from "./filter-carousel";
+import { Caption } from "./caption";
+import { SocialShareButtons } from "./social-share-buttons";
+import { DownloadButton } from "./download-button";
+import { EditorControls } from "./editor-controls";
+import { useToast } from "@/hooks/use-toast";
+import { getCssFilter } from "@/lib/utils";
+import { FIXED_FRAME, SOCIAL_CAPTION } from "@/lib/constants";
+
+export type FilterType =
+  | "none"
+  | "grayscale"
+  | "sepia"
+  | "saturate"
+  | "contrast"
+  | "brightness"
+  | "invert";
 
 export interface PhotoState {
   file: File | null;
@@ -24,42 +33,78 @@ export interface PhotoState {
   rotation: number;
 }
 
-const FIXED_FRAME = {
-  id: "milad-16",
-  name: "Milad Ke-16 UKM PTQ",
-  url: "/images/twibbon-frame.png",
-  category: "Event",
+export interface EditorSliderState {
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+}
+
+const INITIAL_PHOTO_STATE: EditorSliderState = {
+  x: 0,
+  y: 0,
+  scale: 1,
+  rotation: 0,
 };
+
+
+
+
+
+
+
+
 
 export function TwibbonEditor() {
   const [photo, setPhoto] = useState<PhotoState>({
     file: null,
     url: "/placeholder.jpg",
-    x: 0,
-    y: 0,
-    scale: 1,
-    rotation: 0,
+    ...INITIAL_PHOTO_STATE,
   });
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string | null>(
+    "/placeholder.jpg"
+  );
   const [isPhotoUploaded, setIsPhotoUploaded] = useState(false);
+  const [filter, setFilter] = useState<FilterType>("none");
+
+  // Local state for sliders to provide instant visual feedback
+  const [sliderState, setSliderState] = useState<EditorSliderState>(INITIAL_PHOTO_STATE);
+
+  // Sync slider state when the main photo state changes (e.g., on reset or upload)
+  useEffect(() => {
+    setSliderState({
+      scale: photo.scale,
+      rotation: photo.rotation,
+      x: photo.x,
+      y: photo.y,
+    });
+  }, [photo.scale, photo.rotation, photo.x, photo.y]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handlePhotoUpload = useCallback((file: File) => {
-    const url = URL.createObjectURL(file);
-    setPhoto({
-      file,
-      url,
-      x: 0,
-      y: 0,
-      scale: 1,
-      rotation: 0,
-    });
-    setIsPhotoUploaded(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const url = e.target?.result as string;
+      setPhoto({
+        file,
+        url,
+        ...INITIAL_PHOTO_STATE,
+      });
+      setOriginalPhotoUrl(url);
+      setIsPhotoUploaded(true);
+    };
+    reader.readAsDataURL(file);
   }, []);
 
   const updatePhoto = useCallback((updates: Partial<PhotoState>) => {
     setPhoto((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  const resetPhoto = useCallback(() => {
+    updatePhoto(INITIAL_PHOTO_STATE);
+    setFilter("none");
+  }, [updatePhoto]);
 
   const downloadTwibbon = useCallback(async () => {
     if (!photo.url || !canvasRef.current) return;
@@ -105,8 +150,11 @@ export function TwibbonEditor() {
       const offsetX = (canvas.width - drawWidth) / 2;
       const offsetY = (canvas.height - drawHeight) / 2;
 
-      const scaledX = photo.x;
-      const scaledY = photo.y;
+      const scaleFactor = canvas.width / 1080; // Preview canvas is 1080px wide
+      const scaledX = photo.x * scaleFactor;
+      const scaledY = photo.y * scaleFactor;
+
+      ctx.filter = getCssFilter(filter);
 
       ctx.drawImage(
         photoImg,
@@ -134,22 +182,22 @@ export function TwibbonEditor() {
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = `twibbon-milad-16-${Date.now()}.png`;
+              a.download = `twibbon-milad-16-${Date.now()}.jpeg`;
               document.body.appendChild(a);
               a.click();
               document.body.removeChild(a);
               URL.revokeObjectURL(url);
             }
           },
-          "image/png",
-          1.0
+          "image/jpeg",
+          0.9
         );
       };
       frameImg.src = FIXED_FRAME.url;
     };
 
     photoImg.src = photo.url;
-  }, [photo]);
+  }, [photo, filter]);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -157,6 +205,7 @@ export function TwibbonEditor() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">Twibbon Milad Ke-16 UKM PTQ</h1>
+            <SocialShareButtons text={SOCIAL_CAPTION} />
           </div>
 
           <div className="space-y-8">
@@ -170,140 +219,66 @@ export function TwibbonEditor() {
                   onPhotoUpdate={updatePhoto}
                   canvasRef={canvasRef}
                   isPhotoUploaded={isPhotoUploaded}
+                  filter={filter}
                 />
+                {isPhotoUploaded && (
+                  <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      💡 <strong>Tips:</strong> Drag foto langsung di preview
+                      untuk mengatur posisi dengan mudah!
+                    </p>
+                  </div>
+                )}
+                <Caption text={SOCIAL_CAPTION} />
+                
               </div>
 
               {/* Controls */}
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Kontrol Editor</h2>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Upload Foto Anda
+                  </h2>
+                  <PhotoUpload onPhotoUpload={handlePhotoUpload} />
+                </div>
 
                 {isPhotoUploaded ? (
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        💡 <strong>Tips:</strong> Drag foto langsung di preview
-                        untuk mengatur posisi dengan mudah!
-                      </p>
+                  <div className="space-y-4 border-t pt-6">
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-lg font-semibold">Kontrol Editor</h2>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={resetPhoto}
+                        className="gap-2"
+                      >
+                        <RefreshCcw className="h-4 w-4" />
+                        Reset
+                      </Button>
                     </div>
+                    <FilterCarousel
+                      photoUrl={originalPhotoUrl}
+                      filter={filter}
+                      setFilter={setFilter}
+                    />
 
-                    <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-medium">Zoom</label>
-                          <span className="text-sm text-muted-foreground">
-                            {photo.scale.toFixed(1)}x
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ZoomOut className="h-4 w-4" />
-                          <Slider
-                            value={[photo.scale]}
-                            onValueChange={([value]) =>
-                              updatePhoto({ scale: value })
-                            }
-                            min={0.5}
-                            max={3}
-                            step={0.1}
-                            className="flex-1"
-                          />
-                          <ZoomIn className="h-4 w-4" />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-medium">Rotasi</label>
-                          <span className="text-sm text-muted-foreground">
-                            {photo.rotation}°
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <RotateCw className="h-4 w-4" />
-                          <Slider
-                            value={[photo.rotation]}
-                            onValueChange={([value]) =>
-                              updatePhoto({ rotation: value })
-                            }
-                            min={-180}
-                            max={180}
-                            step={1}
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-medium">
-                            Posisi X
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Move className="h-4 w-4" />
-                          <Slider
-                            value={[photo.x]}
-                            onValueChange={([value]) =>
-                              updatePhoto({ x: value })
-                            }
-                            min={-1080}
-                            max={1080}
-                            step={1}
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-medium">
-                            Posisi Y
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Move className="h-4 w-4" />
-                          <Slider
-                            value={[photo.y]}
-                            onValueChange={([value]) =>
-                              updatePhoto({ y: value })
-                            }
-                            min={-1350}
-                            max={1350}
-                            step={1}
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <EditorControls
+                      sliderState={sliderState}
+                      setSliderState={setSliderState}
+                      updatePhoto={updatePhoto}
+                    />
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Upload foto untuk mulai mengedit twibbon</p>
+                  <div className="text-center py-8 text-muted-foreground border-t mt-6 pt-6">
+                    <p>Upload foto untuk mengaktifkan editor.</p>
                   </div>
                 )}
+                <DownloadButton
+                  onClick={downloadTwibbon}
+                  disabled={!isPhotoUploaded}
+                />
               </div>
-            </div>
-
-            {/* Upload Section */}
-            <div className="border-t pt-6">
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Upload Foto Anda
-                </h2>
-                <PhotoUpload onPhotoUpload={handlePhotoUpload} />
-              </div>
-            </div>
-
-            {/* Download Section */}
-            <div className="border-t pt-6">
-              <Button
-                onClick={downloadTwibbon}
-                className="w-full gap-2 cursor-pointer"
-              >
-                <Download className="h-4 w-4" />
-                Download Twibbon
-              </Button>
             </div>
           </div>
         </CardContent>
