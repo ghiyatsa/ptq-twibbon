@@ -47,14 +47,6 @@ const INITIAL_PHOTO_STATE: EditorSliderState = {
   rotation: 0,
 };
 
-
-
-
-
-
-
-
-
 export function TwibbonEditor() {
   const [photo, setPhoto] = useState<PhotoState>({
     file: null,
@@ -68,7 +60,8 @@ export function TwibbonEditor() {
   const [filter, setFilter] = useState<FilterType>("none");
 
   // Local state for sliders to provide instant visual feedback
-  const [sliderState, setSliderState] = useState<EditorSliderState>(INITIAL_PHOTO_STATE);
+  const [sliderState, setSliderState] =
+    useState<EditorSliderState>(INITIAL_PHOTO_STATE);
 
   // Sync slider state when the main photo state changes (e.g., on reset or upload)
   useEffect(() => {
@@ -200,7 +193,7 @@ export function TwibbonEditor() {
   }, [photo, filter]);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="md:max-w-4xl mx-auto">
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
@@ -235,7 +228,6 @@ export function TwibbonEditor() {
                   </div>
                 )}
                 <Caption text={SOCIAL_CAPTION} />
-                
               </div>
 
               {/* Controls */}
