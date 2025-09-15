@@ -57,7 +57,7 @@ export function SocialShareButtons({ text }: SocialShareButtonsProps) {
   };
 
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="flex flex-wrap gap-2 justify-center">
       <Button
         variant="outline"
         size="icon"

@@ -20,4 +20,9 @@ Semoga semakin solid, berdaya, dan istiqamah membumikan nilai-nilai Qur’an. �
 
 📌 Giliran kamu!
 👉 Tulis ucapan/harapanmu di sini:
-"....................."`;
+"....................."
+
+Follow :
+🌐 Website: ptq.unimal.ac.id
+📲 IG & TikTok: @ukmptqunimal
+🎥 YouTube: UKM PTQ Unimal`;

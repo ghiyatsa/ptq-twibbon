@@ -205,6 +205,11 @@ export function TwibbonEditor() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">Twibbon Milad Ke-16 UKM PTQ</h1>
+            <div className="hidden md:flex">
+              <SocialShareButtons text={SOCIAL_CAPTION} />
+            </div>
+          </div>
+          <div className="flex justify-start md:hidden mb-6">
             <SocialShareButtons text={SOCIAL_CAPTION} />
           </div>
 
