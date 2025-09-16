@@ -318,7 +318,7 @@ export function PhotoEditor({
         <canvas
           ref={previewCanvasRef}
           className="w-full h-full cursor-move select-none"
-          style={{ imageRendering: "crisp-edges", touchAction: "none" }}
+          style={{ imageRendering: "crisp-edges", touchAction: isPhotoUploaded ? "none" : "auto" }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}

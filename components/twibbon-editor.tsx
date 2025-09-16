@@ -181,16 +181,12 @@ export function TwibbonEditor() {
   return (
     <div className="md:max-w-4xl mx-auto">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Twibbon Milad Ke-16 UKM PTQ</h1>
-          <div className="hidden md:flex">
-            <SocialShareButtons text={SOCIAL_CAPTION} />
-          </div>
-        </div>
-        <div className="flex justify-start md:hidden mb-6">
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <h1 className="text-2xl font-bold text-center md:text-start">
+            Twibbon Milad Ke-16 UKM PTQ
+          </h1>
           <SocialShareButtons text={SOCIAL_CAPTION} />
         </div>
-
         <div className="space-y-8">
           {/* Edit & Preview Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
