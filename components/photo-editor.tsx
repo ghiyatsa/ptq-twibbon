@@ -213,9 +213,16 @@ export function PhotoEditor({
     const scaleX = previewCanvasRef.current.width / rect.width;
     const scaleY = previewCanvasRef.current.height / rect.height;
 
+    const angle = (photo.rotation * Math.PI) / 180;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    const newDeltaX = (deltaX * cos + deltaY * sin) * scaleX;
+    const newDeltaY = (-deltaX * sin + deltaY * cos) * scaleY;
+
     onPhotoUpdate({
-      x: photo.x + deltaX * scaleX,
-      y: photo.y + deltaY * scaleY,
+      x: photo.x + newDeltaX,
+      y: photo.y + newDeltaY,
     });
 
     lastPosition.current = { x: currentX, y: currentY };
@@ -256,9 +263,16 @@ export function PhotoEditor({
     const scaleX = previewCanvasRef.current.width / rect.width;
     const scaleY = previewCanvasRef.current.height / rect.height;
 
+    const angle = (photo.rotation * Math.PI) / 180;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    const newDeltaX = (deltaX * cos + deltaY * sin) * scaleX;
+    const newDeltaY = (-deltaX * sin + deltaY * cos) * scaleY;
+
     onPhotoUpdate({
-      x: photo.x + deltaX * scaleX,
-      y: photo.y + deltaY * scaleY,
+      x: photo.x + newDeltaX,
+      y: photo.y + newDeltaY,
     });
 
     lastPosition.current = { x: currentX, y: currentY };

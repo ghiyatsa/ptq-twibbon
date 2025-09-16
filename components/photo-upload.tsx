@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useDropzone, FileRejection } from "react-dropzone";
-import { Upload, ImageIcon } from "lucide-react";
+import { Upload, ImageIcon, Loader2 } from "lucide-react";
 import { cn, resizeImage } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,6 +12,7 @@ interface PhotoUploadProps {
 
 export function PhotoUpload({ onPhotoUpload }: PhotoUploadProps) {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -31,6 +32,7 @@ export function PhotoUpload({ onPhotoUpload }: PhotoUploadProps) {
       }
 
       if (acceptedFiles.length > 0) {
+        setIsLoading(true);
         try {
           const originalFile = acceptedFiles[0];
           const resizedFile = await resizeImage(originalFile);
@@ -42,6 +44,8 @@ export function PhotoUpload({ onPhotoUpload }: PhotoUploadProps) {
             title: "Gagal Memproses Gambar",
             description: "Terjadi kesalahan saat mengubah ukuran gambar.",
           });
+        } finally {
+          setIsLoading(false);
         }
       }
     },
@@ -62,12 +66,18 @@ export function PhotoUpload({ onPhotoUpload }: PhotoUploadProps) {
       {...getRootProps()}
       className={cn(
         "border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer transition-colors hover:border-primary/50",
-        isDragActive && "border-primary bg-primary/5"
+        isDragActive && "border-primary bg-primary/5",
+        isLoading && "cursor-wait"
       )}
     >
       <input {...getInputProps()} />
       <div className="flex flex-col items-center gap-4">
-        {isDragActive ? (
+        {isLoading ? (
+          <>
+            <Loader2 className="h-12 w-12 text-primary animate-spin" />
+            <p className="text-primary font-medium">Memproses foto...</p>
+          </>
+        ) : isDragActive ? (
           <>
             <Upload className="h-12 w-12 text-primary animate-bounce" />
             <p className="text-primary font-medium">Lepaskan foto di sini...</p>

@@ -161,6 +161,7 @@ export function TwibbonEditor() {
               const a = document.createElement("a");
               a.href = url;
               a.download = `twibbon-milad-16-${Date.now()}.jpeg`;
+              a.type = "image/jpeg";
               document.body.appendChild(a);
               a.click();
               document.body.removeChild(a);
@@ -244,11 +245,7 @@ export function TwibbonEditor() {
                     updatePhoto={updatePhoto}
                   />
                 </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground border-t mt-6 pt-6">
-                  <p>Upload foto untuk mengaktifkan editor.</p>
-                </div>
-              )}
+              ) : null}
               <DownloadButton
                 onClick={downloadTwibbon}
                 disabled={!isPhotoUploaded}
