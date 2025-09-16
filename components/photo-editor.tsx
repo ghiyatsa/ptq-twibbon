@@ -235,7 +235,7 @@ export function PhotoEditor({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isPhotoUploaded || !photo.url) return;
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     const touch = e.touches[0];
     const rect = previewCanvasRef.current?.getBoundingClientRect();
     if (rect) {
@@ -249,7 +249,7 @@ export function PhotoEditor({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     if (!isDragging.current || !previewCanvasRef.current) return;
 
     const touch = e.touches[0];
@@ -279,7 +279,7 @@ export function PhotoEditor({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     isDragging.current = false;
     setIsDraggingState(false);
   };

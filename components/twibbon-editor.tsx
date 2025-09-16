@@ -207,21 +207,11 @@ export function TwibbonEditor() {
                   </p>
                 </div>
               )}
-              <Caption text={SOCIAL_CAPTION} />
             </div>
 
-            {/* Controls */}
             <div className="space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Upload Foto Anda
-                </h2>
-                <PhotoUpload onPhotoUpload={handlePhotoUpload} />
-              </div>
-
               {isPhotoUploaded ? (
-                <div className="space-y-4 border-t pt-6">
+                <div className="space-y-4 pt-6">
                   <div className="flex justify-between items-center">
                     <h2 className="text-lg font-semibold">Kontrol Editor</h2>
                     <Button
@@ -234,7 +224,6 @@ export function TwibbonEditor() {
                       Reset
                     </Button>
                   </div>
-
                   <EditorControls
                     sliderState={sliderState}
                     setSliderState={setSliderState}
@@ -242,12 +231,21 @@ export function TwibbonEditor() {
                   />
                 </div>
               ) : null}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Upload Foto Anda
+                </h2>
+                <PhotoUpload onPhotoUpload={handlePhotoUpload} />
+              </div>
+
               <DownloadButton
                 onClick={downloadTwibbon}
                 disabled={!isPhotoUploaded}
               />
             </div>
           </div>
+          <Caption text={SOCIAL_CAPTION} />
         </div>
       </CardContent>
 
