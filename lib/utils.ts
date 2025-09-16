@@ -5,25 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const getCssFilter = (filter: string | null) => {
-  switch (filter) {
-    case "grayscale":
-      return "grayscale(100%)";
-    case "sepia":
-      return "sepia(100%)";
-    case "saturate":
-      return "saturate(1.5)";
-    case "contrast":
-      return "contrast(1.5)";
-    case "brightness":
-      return "brightness(1.2)";
-    case "invert":
-      return "invert(100%)";
-    default:
-      return "none";
-  }
-};
-
 const MAX_DIMENSION = 2000; // Max width/height for the image
 
 export async function resizeImage(file: File): Promise<File> {

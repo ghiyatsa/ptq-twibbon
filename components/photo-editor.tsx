@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoState } from "./twibbon-editor";
 import { Skeleton } from "./ui/skeleton";
-import { getCssFilter } from "@/lib/utils";
 
 interface FrameState {
   id: string;
@@ -19,7 +18,6 @@ interface PhotoEditorProps {
   onPhotoUpdate: (updates: Partial<PhotoState>) => void;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   isPhotoUploaded: boolean;
-  filter: string;
 }
 
 export function PhotoEditor({
@@ -28,7 +26,6 @@ export function PhotoEditor({
   onPhotoUpdate,
   canvasRef,
   isPhotoUploaded,
-  filter,
 }: PhotoEditorProps) {
   const { toast } = useToast();
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -156,8 +153,6 @@ export function PhotoEditor({
           ctx.globalAlpha = 0.7; // Set opacity when dragging
         }
 
-        ctx.filter = getCssFilter(filter);
-
         ctx.drawImage(
           photoImg,
           photo.x + offsetX,
@@ -190,7 +185,6 @@ export function PhotoEditor({
     isFrameLoading,
     isPhotoLoading,
     isDraggingState,
-    filter,
   ]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -310,7 +304,7 @@ export function PhotoEditor({
         <canvas
           ref={previewCanvasRef}
           className="w-full h-full cursor-move select-none"
-          style={{ imageRendering: "crisp-edges" }}
+          style={{ imageRendering: "crisp-edges", touchAction: "none" }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}

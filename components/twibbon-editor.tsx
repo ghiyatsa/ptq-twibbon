@@ -1,28 +1,17 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PhotoUpload } from "@/components/photo-upload";
 import { PhotoEditor } from "@/components/photo-editor";
 import { Upload, RefreshCcw } from "lucide-react";
-import { FilterCarousel } from "./filter-carousel";
 import { Caption } from "./caption";
 import { SocialShareButtons } from "./social-share-buttons";
 import { DownloadButton } from "./download-button";
 import { EditorControls } from "./editor-controls";
 import { useToast } from "@/hooks/use-toast";
-import { getCssFilter } from "@/lib/utils";
 import { FIXED_FRAME, SOCIAL_CAPTION } from "@/lib/constants";
-
-export type FilterType =
-  | "none"
-  | "grayscale"
-  | "sepia"
-  | "saturate"
-  | "contrast"
-  | "brightness"
-  | "invert";
 
 export interface PhotoState {
   file: File | null;
@@ -57,7 +46,6 @@ export function TwibbonEditor() {
     "/placeholder.jpg"
   );
   const [isPhotoUploaded, setIsPhotoUploaded] = useState(false);
-  const [filter, setFilter] = useState<FilterType>("none");
 
   // Local state for sliders to provide instant visual feedback
   const [sliderState, setSliderState] =
@@ -96,7 +84,6 @@ export function TwibbonEditor() {
 
   const resetPhoto = useCallback(() => {
     updatePhoto(INITIAL_PHOTO_STATE);
-    setFilter("none");
   }, [updatePhoto]);
 
   const downloadTwibbon = useCallback(async () => {
@@ -147,8 +134,6 @@ export function TwibbonEditor() {
       const scaledX = photo.x * scaleFactor;
       const scaledY = photo.y * scaleFactor;
 
-      ctx.filter = getCssFilter(filter);
-
       ctx.drawImage(
         photoImg,
         scaledX + offsetX,
@@ -190,96 +175,88 @@ export function TwibbonEditor() {
     };
 
     photoImg.src = photo.url;
-  }, [photo, filter]);
+  }, [photo]);
 
   return (
     <div className="md:max-w-4xl mx-auto">
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Twibbon Milad Ke-16 UKM PTQ</h1>
-            <div className="hidden md:flex">
-              <SocialShareButtons text={SOCIAL_CAPTION} />
-            </div>
-          </div>
-          <div className="flex justify-start md:hidden mb-6">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Twibbon Milad Ke-16 UKM PTQ</h1>
+          <div className="hidden md:flex">
             <SocialShareButtons text={SOCIAL_CAPTION} />
           </div>
+        </div>
+        <div className="flex justify-start md:hidden mb-6">
+          <SocialShareButtons text={SOCIAL_CAPTION} />
+        </div>
 
-          <div className="space-y-8">
-            {/* Edit & Preview Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Edit & Preview</h2>
-                <PhotoEditor
-                  photo={photo}
-                  selectedFrame={FIXED_FRAME}
-                  onPhotoUpdate={updatePhoto}
-                  canvasRef={canvasRef}
-                  isPhotoUploaded={isPhotoUploaded}
-                  filter={filter}
-                />
-                {isPhotoUploaded && (
-                  <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      💡 <strong>Tips:</strong> Drag foto langsung di preview
-                      untuk mengatur posisi dengan mudah!
-                    </p>
-                  </div>
-                )}
-                <Caption text={SOCIAL_CAPTION} />
-              </div>
-
-              {/* Controls */}
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <Upload className="h-5 w-5" />
-                    Upload Foto Anda
-                  </h2>
-                  <PhotoUpload onPhotoUpload={handlePhotoUpload} />
+        <div className="space-y-8">
+          {/* Edit & Preview Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Edit & Preview</h2>
+              <PhotoEditor
+                photo={photo}
+                selectedFrame={FIXED_FRAME}
+                onPhotoUpdate={updatePhoto}
+                canvasRef={canvasRef}
+                isPhotoUploaded={isPhotoUploaded}
+              />
+              {isPhotoUploaded && (
+                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    💡 <strong>Tips:</strong> Drag foto langsung di preview
+                    untuk mengatur posisi dengan mudah!
+                  </p>
                 </div>
+              )}
+              <Caption text={SOCIAL_CAPTION} />
+            </div>
 
-                {isPhotoUploaded ? (
-                  <div className="space-y-4 border-t pt-6">
-                    <div className="flex justify-between items-center">
-                      <h2 className="text-lg font-semibold">Kontrol Editor</h2>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={resetPhoto}
-                        className="gap-2"
-                      >
-                        <RefreshCcw className="h-4 w-4" />
-                        Reset
-                      </Button>
-                    </div>
-                    <FilterCarousel
-                      photoUrl={originalPhotoUrl}
-                      filter={filter}
-                      setFilter={setFilter}
-                    />
-
-                    <EditorControls
-                      sliderState={sliderState}
-                      setSliderState={setSliderState}
-                      updatePhoto={updatePhoto}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground border-t mt-6 pt-6">
-                    <p>Upload foto untuk mengaktifkan editor.</p>
-                  </div>
-                )}
-                <DownloadButton
-                  onClick={downloadTwibbon}
-                  disabled={!isPhotoUploaded}
-                />
+            {/* Controls */}
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Upload Foto Anda
+                </h2>
+                <PhotoUpload onPhotoUpload={handlePhotoUpload} />
               </div>
+
+              {isPhotoUploaded ? (
+                <div className="space-y-4 border-t pt-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-semibold">Kontrol Editor</h2>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetPhoto}
+                      className="gap-2"
+                    >
+                      <RefreshCcw className="h-4 w-4" />
+                      Reset
+                    </Button>
+                  </div>
+
+                  <EditorControls
+                    sliderState={sliderState}
+                    setSliderState={setSliderState}
+                    updatePhoto={updatePhoto}
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground border-t mt-6 pt-6">
+                  <p>Upload foto untuk mengaktifkan editor.</p>
+                </div>
+              )}
+              <DownloadButton
+                onClick={downloadTwibbon}
+                disabled={!isPhotoUploaded}
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardContent>
 
       {/* Hidden canvas for download */}
       <canvas ref={canvasRef} className="hidden" />
